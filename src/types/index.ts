@@ -12,6 +12,40 @@ export type KakaoAccessTokenInfo = {
   expiresIn: string;
 };
 
+export type KakaoShippingAddress = {
+  id: string;
+  name: string;
+  isDefault: boolean;
+  updatedAt: string;
+  type: string;
+  baseAddress: string;
+  detailAddress: string;
+  receiverName: string;
+  receiverPhoneNumber1: string;
+  receiverPhoneNumber2: string;
+  zoneNumber: string;
+  zipCode: string;
+};
+
+export type KakaoShippingAddresses = {
+  userId: string;
+  needsAgreement: boolean;
+  shippingAddresses: KakaoShippingAddress[];
+};
+
+export type KakaoServiceTerm = {
+  tag: string;
+  agreed: boolean;
+  required: boolean;
+  revocable: boolean;
+  agreedAt?: string;
+};
+
+export type KakaoServiceTerms = {
+  userId: string;
+  serviceTerms: KakaoServiceTerm[];
+};
+
 export type KakaoProfile = {
   id: number;
   email: string;

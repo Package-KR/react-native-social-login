@@ -1,6 +1,6 @@
 import NativeKakaoLogin from './NativeKakaoLogin';
 
-import type { KakaoOAuthToken, KakaoProfile, KakaoAccessTokenInfo } from './types';
+import type { KakaoOAuthToken, KakaoProfile, KakaoAccessTokenInfo, KakaoShippingAddresses, KakaoServiceTerms } from './types';
 
 // 카카오 로그인
 export const login = (): Promise<KakaoOAuthToken> => {
@@ -30,6 +30,16 @@ export const getProfile = (): Promise<KakaoProfile> => {
 // 토큰 정보 조회
 export const getAccessToken = (): Promise<KakaoAccessTokenInfo> => {
   return NativeKakaoLogin.getAccessToken() as unknown as Promise<KakaoAccessTokenInfo>;
+};
+
+// 배송지 조회
+export const shippingAddresses = (): Promise<KakaoShippingAddresses> => {
+  return NativeKakaoLogin.shippingAddresses() as unknown as Promise<KakaoShippingAddresses>;
+};
+
+// 서비스 약관 조회
+export const serviceTerms = (): Promise<KakaoServiceTerms> => {
+  return NativeKakaoLogin.serviceTerms() as unknown as Promise<KakaoServiceTerms>;
 };
 
 export * from './types';

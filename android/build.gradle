@@ -1,0 +1,60 @@
+// 호스트 앱 설정값 조회 (없으면 기본값 사용)
+def getExtOrDefault(name, defaultValue) {
+    return rootProject.ext.has(name) ? rootProject.ext.get(name) : defaultValue
+}
+
+// Android 라이브러리 플러그인 (TurboModule 포함)
+apply plugin: "com.android.library"
+apply plugin: "org.jetbrains.kotlin.android"
+apply plugin: "com.facebook.react"
+
+// TurboModule 코드젠 설정
+react {
+    jsRootDir = file("../src")
+    libraryName = "RNKakaoLoginSpec"
+    codegenJavaPackageName = "com.packagekr.kakao"
+}
+
+// Android 빌드 설정
+android {
+    namespace "com.packagekr.kakao"
+    compileSdkVersion getExtOrDefault("compileSdkVersion", 36)
+
+    defaultConfig {
+        minSdkVersion getExtOrDefault("minSdkVersion", 24)
+        targetSdkVersion getExtOrDefault("targetSdkVersion", 36)
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+}
+
+// 기본 저장소
+repositories {
+    google()
+    mavenCentral()
+}
+
+// 카카오 SDK 저장소
+rootProject.allprojects {
+    repositories {
+        maven { url 'https://devrepo.kakao.com/nexus/content/groups/public/' }
+    }
+}
+
+// 의존성
+dependencies {
+    def kakaoVersion = getExtOrDefault("kakaoSdkVersion", "2.22.0")
+
+    implementation "com.facebook.react:react-native:+"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:${getExtOrDefault("kotlinVersion", "2.1.20")}"
+
+    implementation "com.kakao.sdk:v2-user:${kakaoVersion}"
+    implementation "com.kakao.sdk:v2-talk:${kakaoVersion}"
+}

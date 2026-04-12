@@ -13,14 +13,13 @@ React Native 전용 카카오 로그인 라이브러리 입니다.
 
 </div>
 
-> [!WARNING]
-> RN Expo와 v0.68 미만은 추후 지원 예정입니다.
-
 ## Getting started
 
 해당 라이브러리는 React Native `0.68` 이상을 지원합니다.<br/><br/>
 `TurboModule` 기반으로 구현되어 있어 `New Architecture`를 지원하며,<br/>
-`Auto Linking`이 적용되어 있어 별도 네이티브 모듈 연결 작업이 필요 없습니다.
+`Auto Linking`이 적용되어 있어 별도 네이티브 모듈 연결 작업이 필요 없습니다.<br/>
+
+RN Expo와 v0.68 미만은 추후 지원 예정입니다.
 
 ## Prerequisites
 

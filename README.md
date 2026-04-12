@@ -67,7 +67,6 @@ npm install @package-kr/react-native-kakao-signin
 ```
 
 </details>
-<br/>
 
 ```diff
 	<key>CFBundleURLTypes</key>

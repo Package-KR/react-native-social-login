@@ -1,97 +1,301 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+<div align="center">
 
-# Getting Started
+# @package-kr/react-native-kakao-signin
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+[![npm](https://img.shields.io/npm/v/@package-kr/react-native-kakao-signin)](https://www.npmjs.com/package/@package-kr/react-native-kakao-signin)
+[![npm downloads](https://img.shields.io/npm/dm/@package-kr/react-native-kakao-signin)](https://www.npmjs.com/package/@package-kr/react-native-kakao-signin)
+![license](https://img.shields.io/badge/license-MIT-blue)
 
-## Step 1: Start Metro
+![iOS](https://img.shields.io/badge/iOS-13%2B-black?logo=apple&logoColor=white&labelColor=000000)
+![Android](https://img.shields.io/badge/Android-API%2024%2B-3DDC84?logo=android&logoColor=white&labelColor=3DDC84)
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+React Native 전용 카카오 로그인 라이브러리 입니다.
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+</div>
 
-```sh
-# Using npm
-npm start
+## Getting started
 
-# OR using Yarn
-yarn start
-```
+해당 라이브러리는 React Native `0.68` 이상을 지원합니다.<br/><br/>
+`TurboModule` 기반으로 구현되어 있어 `New Architecture`를 지원하며,<br/>
+`Auto Linking`이 적용되어 있어 별도 네이티브 모듈 연결 작업이 필요 없습니다.
 
-## Step 2: Build and run your app
+## Prerequisites
 
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
+라이브러리를 사용하려면 먼저 [카카오 개발자 콘솔](./docs/KAKAO_CONSOLE_SETUP.md)에서 앱 등록과 플랫폼 설정을 완료해야 합니다.
 
-### Android
-
-```sh
-# Using npm
-npm run android
-
-# OR using Yarn
-yarn android
-```
-
-### iOS
-
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
-
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
+## Installation
 
 ```sh
-bundle install
+npm install @package-kr/react-native-kakao-signin
 ```
 
-Then, and every time you update your native dependencies, run:
+> [!NOTE]
+> RN Expo와 v0.68 미만 버전은 추후 지원 예정입니다.
+
+## iOS 🍎
+
+1. ### Info.plist 설정 (`ios/{ProjectName}/Info.plist`)
+   - `{KAKAO_APP_KEY}` 부분을 카카오 네이티브 앱 키로 교체해주세요.
+
+<details>
+<summary>복사용</summary>
+
+```xml
+<key>CFBundleURLTypes</key>
+<array>
+	<dict>
+		<key>CFBundleTypeRole</key>
+		<string>Editor</string>
+		<key>CFBundleURLName</key>
+		<string>KAKAO</string>
+		<key>CFBundleURLSchemes</key>
+		<array>
+			<string>kakao{KAKAO_APP_KEY}</string>
+		</array>
+	</dict>
+</array>
+<key>CFBundleVersion</key>
+<string>$(CURRENT_PROJECT_VERSION)</string>
+<key>KAKAO_APP_KEY</key>
+<string>{KAKAO_APP_KEY}</string>
+<key>LSApplicationQueriesSchemes</key>
+<array>
+	<string>kakao{KAKAO_APP_KEY}</string>
+	<string>kakaokompassauth</string>
+	<string>kakaotalk</string>
+</array>
+```
+
+</details>
+<br/>
+
+```diff
+	<key>CFBundleURLTypes</key>
+	<array>
++		<dict>
++			<key>CFBundleTypeRole</key>
++			<string>Editor</string>
++			<key>CFBundleURLName</key>
++			<string>KAKAO</string>
++			<key>CFBundleURLSchemes</key>
++			<array>
++				<string>kakao{KAKAO_APP_KEY}</string>
++			</array>
++		</dict>
+	</array>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
++	<key>KAKAO_APP_KEY</key>
++	<string>{KAKAO_APP_KEY}</string>
++	<key>LSApplicationQueriesSchemes</key>
++	<array>
++		<string>kakaoa{KAKAO_APP_KEY}</string>
++		<string>kakaokompassauth</string>
++		<string>kakaotalk</string>
++	</array>
+```
+
+2. ### CocoaPods 설치
 
 ```sh
-bundle exec pod install
+cd ios && pod install
 ```
 
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
+## Android 🤖
 
-```sh
-# Using npm
-npm run ios
+1. ### Redirect URI 설정 (`app/src/main/AndroidManifest.xml`)
+   - `AndroidManifest.xml`에 카카오 리다이렉트 액티비티를 추가합니다. `{KAKAO_APP_KEY}` 부분을 카카오 네이티브 앱 키로 교체해주세요.<br/><br/>
+     사용자 휴대폰에 카카오 앱이 설치되어 있을 경우 로그인 후 앱으로 돌아오기 위한 설정입니다.<br/>
+     Android 12(API 31) 이상을 타깃하는 경우 `android:exported="true"` 를 반드시 선언해주셔야 합니다.
 
-# OR using Yarn
-yarn ios
+```xml
+      <activity
+        android:name="com.kakao.sdk.auth.AuthCodeHandlerActivity"
+        android:exported="true">
+        <intent-filter>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.DEFAULT" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:host="oauth" android:scheme="kakao{KAKAO_APP_KEY}" />
+        </intent-filter>
+      </activity>
 ```
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
+2. ### 카카오 앱 키 설정 (`app/src/main/res/values/strings.xml`)
+   - `strings.xml`에 카카오 앱 키를 추가합니다. 카카오 SDK가 앱 키를 자동으로 읽어오기 위한 설정입니다.
 
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
+```diff
+  <resources>
+      <string name="app_name">YourAppName</string>
++     <string name="kakao_app_key">{KAKAO_APP_KEY}</string>
+  </resources>
+```
 
-## Step 3: Modify your app
+## Usage
 
-Now that you have successfully run the app, let's make changes!
+더 많은 사용 예제는 [KakaoLoginExample](https://github.com/Package-KR/react-native-kakao-signin/tree/main/KakaoLoginExample) 프로젝트를 참고해주세요.
 
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
+```ts
+import {
+  login,
+  loginWithKakaoAccount,
+  logout,
+  unlink,
+  getProfile,
+  getAccessToken,
+  shippingAddresses,
+  serviceTerms,
+} from '@package-kr/react-native-kakao-signin';
 
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
+// 카카오톡으로 로그인 (카카오톡 미설치 시 카카오계정으로 자동 전환)
+const token = await login();
 
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
+// 카카오계정으로 로그인
+const token = await loginWithKakaoAccount();
 
-## Congratulations! :tada:
+// 로그아웃
+await logout();
 
-You've successfully run and modified your React Native App. :partying_face:
+// 연결 해제
+await unlink();
 
-### Now what?
+// 프로필 조회
+const profile = await getProfile();
 
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
+// 토큰 조회
+const token = await getAccessToken();
 
-# Troubleshooting
+// 배송주소 조회
+const addresses = await shippingAddresses();
 
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
+// 서비스 약관 조회
+const terms = await serviceTerms();
+```
 
-# Learn More
+---
 
-To learn more about React Native, take a look at the following resources:
+## Methods
 
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+| 메서드                    | 설명                                                                                 | Returns                           |
+| ------------------------- | ------------------------------------------------------------------------------------ | --------------------------------- |
+| `login()`                 | 카카오톡으로 로그인합니다. 카카오톡 미설치 시 카카오계정 로그인으로 자동 전환됩니다. | `Promise<KakaoOAuthToken>`        |
+| `loginWithKakaoAccount()` | 카카오계정으로 로그인합니다.                                                         | `Promise<KakaoOAuthToken>`        |
+| `logout()`                | 로그아웃합니다.                                                                      | `Promise<string>`                 |
+| `unlink()`                | 카카오 계정 연결을 해제합니다.                                                       | `Promise<string>`                 |
+| `getProfile()`            | 사용자 프로필을 조회합니다.                                                          | `Promise<KakaoProfile>`           |
+| `getAccessToken()`        | 현재 저장된 액세스 토큰을 조회합니다.                                                | `Promise<KakaoAccessTokenInfo>`   |
+| `shippingAddresses()`     | 사용자 배송주소 목록을 조회합니다.                                                   | `Promise<KakaoShippingAddresses>` |
+| `serviceTerms()`          | 서비스 약관 동의 내역을 조회합니다.                                                  | `Promise<KakaoServiceTerms>`      |
+
+---
+
+## Types
+
+### `KakaoOAuthToken`
+
+| 필드                    | 타입               | 설명                     |
+| ----------------------- | ------------------ | ------------------------ |
+| `accessToken`           | `string`           | 액세스 토큰              |
+| `refreshToken`          | `string`           | 리프레시 토큰            |
+| `idToken`               | `string \| null`   | ID 토큰 (OpenID Connect) |
+| `accessTokenExpiresAt`  | `string`           | 액세스 토큰 만료 시각    |
+| `refreshTokenExpiresAt` | `string`           | 리프레시 토큰 만료 시각  |
+| `scopes`                | `string[] \| null` | 인증된 스코프 목록       |
+
+### `KakaoProfile`
+
+| 필드                            | 타입              | 설명                              |
+| ------------------------------- | ----------------- | --------------------------------- |
+| `id`                            | `number \| null`  | 사용자 ID                         |
+| `nickname`                      | `string \| null`  | 닉네임                            |
+| `name`                          | `string \| null`  | 이름                              |
+| `email`                         | `string \| null`  | 이메일                            |
+| `profileImageUrl`               | `string \| null`  | 프로필 이미지 URL                 |
+| `thumbnailImageUrl`             | `string \| null`  | 프로필 썸네일 이미지 URL          |
+| `gender`                        | `string \| null`  | 성별                              |
+| `ageRange`                      | `string \| null`  | 연령대                            |
+| `birthday`                      | `string \| null`  | 생일 (MMDD)                       |
+| `birthdayType`                  | `string \| null`  | 생일 타입 (SOLAR/LUNAR)           |
+| `birthyear`                     | `string \| null`  | 출생 연도                         |
+| `phoneNumber`                   | `string \| null`  | 전화번호                          |
+| `isEmailValid`                  | `boolean \| null` | 이메일 유효 여부                  |
+| `isEmailVerified`               | `boolean \| null` | 이메일 인증 여부                  |
+| `isKorean`                      | `boolean \| null` | 한국인 여부                       |
+| `hasEmail`                      | `boolean \| null` | 이메일 보유 여부                  |
+| `hasPhoneNumber`                | `boolean \| null` | 전화번호 보유 여부                |
+| `hasBirthday`                   | `boolean \| null` | 생일 보유 여부                    |
+| `hasBirthyear`                  | `boolean \| null` | 출생 연도 보유 여부               |
+| `hasAgeRange`                   | `boolean \| null` | 연령대 보유 여부                  |
+| `hasGender`                     | `boolean \| null` | 성별 보유 여부                    |
+| `isDefaultImage`                | `boolean \| null` | 기본 프로필 이미지 여부           |
+| `isDefaultNickname`             | `boolean \| null` | 기본 닉네임 여부                  |
+| `connectedAt`                   | `string \| null`  | 서비스 연결 시각                  |
+| `synchedAt`                     | `string \| null`  | 카카오싱크 로그인 시각            |
+| `isLeapMonth`                   | `boolean \| null` | 생일 윤달 여부                    |
+| `ci`                            | `string \| null`  | 연계정보                          |
+| `ciAuthenticatedAt`             | `string \| null`  | CI 발급 시각                      |
+| `emailNeedsAgreement`           | `boolean \| null` | 이메일 제공 동의 필요 여부        |
+| `profileNeedsAgreement`         | `boolean \| null` | 프로필 제공 동의 필요 여부        |
+| `phoneNumberNeedsAgreement`     | `boolean \| null` | 전화번호 제공 동의 필요 여부      |
+| `genderNeedsAgreement`          | `boolean \| null` | 성별 제공 동의 필요 여부          |
+| `ageRangeNeedsAgreement`        | `boolean \| null` | 연령대 제공 동의 필요 여부        |
+| `birthdayNeedsAgreement`        | `boolean \| null` | 생일 제공 동의 필요 여부          |
+| `birthyearNeedsAgreement`       | `boolean \| null` | 출생 연도 제공 동의 필요 여부     |
+| `isKoreanNeedsAgreement`        | `boolean \| null` | 한국인 여부 제공 동의 필요 여부   |
+| `profileNicknameNeedsAgreement` | `boolean \| null` | 닉네임 제공 동의 필요 여부        |
+| `profileImageNeedsAgreement`    | `boolean \| null` | 프로필 이미지 제공 동의 필요 여부 |
+| `nameNeedsAgreement`            | `boolean \| null` | 이름 제공 동의 필요 여부          |
+| `ciNeedsAgreement`              | `boolean \| null` | CI 제공 동의 필요 여부            |
+
+### `KakaoAccessTokenInfo`
+
+| 필드          | 타입     | 설명                    |
+| ------------- | -------- | ----------------------- |
+| `accessToken` | `string` | 액세스 토큰             |
+| `expiresIn`   | `string` | 만료까지 남은 시간 (초) |
+
+### `KakaoShippingAddresses`
+
+| 필드                | 타입                     | 설명           |
+| ------------------- | ------------------------ | -------------- |
+| `userId`            | `string`                 | 사용자 ID      |
+| `needsAgreement`    | `boolean`                | 동의 필요 여부 |
+| `shippingAddresses` | `KakaoShippingAddress[]` | 배송주소 목록  |
+
+### `KakaoShippingAddress`
+
+| 필드                   | 타입      | 설명              |
+| ---------------------- | --------- | ----------------- |
+| `id`                   | `string`  | 배송주소 ID       |
+| `name`                 | `string`  | 배송지명          |
+| `isDefault`            | `boolean` | 기본 배송지 여부  |
+| `updatedAt`            | `string`  | 수정 시각         |
+| `type`                 | `string`  | 배송지 타입       |
+| `baseAddress`          | `string`  | 기본 주소         |
+| `detailAddress`        | `string`  | 상세 주소         |
+| `receiverName`         | `string`  | 수령인 이름       |
+| `receiverPhoneNumber1` | `string`  | 수령인 전화번호 1 |
+| `receiverPhoneNumber2` | `string`  | 수령인 전화번호 2 |
+| `zoneNumber`           | `string`  | 우편번호          |
+| `zipCode`              | `string`  | 구 우편번호       |
+
+### `KakaoServiceTerms`
+
+| 필드           | 타입                 | 설명             |
+| -------------- | -------------------- | ---------------- |
+| `userId`       | `string`             | 사용자 ID        |
+| `serviceTerms` | `KakaoServiceTerm[]` | 서비스 약관 목록 |
+
+### `KakaoServiceTerm`
+
+| 필드        | 타입                  | 설명           |
+| ----------- | --------------------- | -------------- |
+| `tag`       | `string`              | 약관 태그      |
+| `agreed`    | `boolean`             | 동의 여부      |
+| `required`  | `boolean`             | 필수 여부      |
+| `revocable` | `boolean`             | 철회 가능 여부 |
+| `agreedAt`  | `string \| undefined` | 동의 시각      |
+
+## 라이선스
+
+MIT

@@ -75,6 +75,7 @@ npm install @package-kr/react-native-kakao-signin
 </details>
 
 ```diff
+	<!-- Info.plist -->
 	<key>CFBundleURLTypes</key>
 	<array>
 +		<dict>
@@ -117,6 +118,7 @@ cd ios && pod install
 Android 12(API 31) 이상을 타깃하는 경우 `android:exported="true"` 를 반드시 선언해주셔야 합니다.
 
 ```xml
+	  <!-- AndroidManifest.xml -->
       <activity
         android:name="com.kakao.sdk.auth.AuthCodeHandlerActivity"
         android:exported="true">

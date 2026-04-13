@@ -136,10 +136,11 @@ jobs:
     needs: version
 
     steps:
-      # GitHub Release 생성과 npm 배포를 위해 최신 main 상태를 다시 가져옵니다.
+      # version job이 push한 릴리스 커밋 기준으로 체크아웃합니다.
       - name: Checkout
         uses: actions/checkout@v6
         with:
+          ref: ${{ needs.version.outputs.version }}
           fetch-depth: 0
 
       # npm publish와 gh CLI 사용을 위한 Node 환경을 맞춥니다.

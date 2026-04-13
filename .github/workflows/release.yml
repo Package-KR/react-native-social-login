@@ -10,9 +10,12 @@ permissions:
   id-token: write
 
 jobs:
-  release:
+  # 1. 릴리스가 필요한 커밋인지 먼저 판단하는 구간입니다.
+  analyze:
     runs-on: ubuntu-latest
     if: ${{ !startsWith(github.event.head_commit.message, 'chore(release):') }}
+    outputs:
+      release_type: ${{ steps.release_type.outputs.release_type }}
 
     steps:
       # 릴리스 계산과 태그 생성을 위해 전체 git 히스토리를 가져옵니다.
@@ -68,41 +71,97 @@ jobs:
         if: ${{ steps.release_type.outputs.release_type == '' }}
         run: echo "No releasable commits found."
 
+  # 2. 계산된 릴리스 타입으로 버전 파일, 릴리스 커밋, 태그를 만드는 구간입니다.
+  version:
+    runs-on: ubuntu-latest
+    needs: analyze
+    if: ${{ needs.analyze.outputs.release_type != '' }}
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+
+    steps:
+      # 버전 계산과 릴리스 커밋 생성을 위해 전체 git 히스토리를 가져옵니다.
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # npm version과 package-lock 처리를 위한 Node 환경을 맞춥니다.
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+          cache: npm
+
+      # 버전 파일 갱신 전 package-lock 기준으로 의존성을 설치합니다.
+      - name: Install dependencies
+        run: npm ci
+
+      # 릴리스 커밋 작성자를 GitHub Actions 봇 계정으로 고정합니다.
+      - name: Configure git user
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
       # 계산된 타입에 맞춰 package.json 버전을 올리되 아직 git tag는 만들지 않습니다.
       - name: Bump version
-        if: ${{ steps.release_type.outputs.release_type != '' }}
-        run: npm version "${{ steps.release_type.outputs.release_type }}" --no-git-tag-version
+        run: npm version "${{ needs.analyze.outputs.release_type }}" --no-git-tag-version
+
+      # 이후 단계에서 재사용할 릴리스 버전을 workflow output으로 저장합니다.
+      - name: Save release version
+        id: version
+        run: echo "version=v$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
 
       # 변경된 버전 파일을 릴리스 전용 커밋으로 남기고 후속 CI는 건너뜁니다.
       - name: Commit version files
-        if: ${{ steps.release_type.outputs.release_type != '' }}
         run: |
-          version="v$(node -p "require('./package.json').version")"
+          version="${{ steps.version.outputs.version }}"
           git add package.json package-lock.json
           git commit -m "chore(release): ${version} [skip ci]"
 
       # 릴리스 버전과 동일한 git tag를 생성합니다.
       - name: Create tag
-        if: ${{ steps.release_type.outputs.release_type != '' }}
         run: |
-          version="v$(node -p "require('./package.json').version")"
+          version="${{ steps.version.outputs.version }}"
           git tag "$version"
 
       # 릴리스 커밋과 태그를 main 브랜치 원격 저장소로 반영합니다.
       - name: Push release commit and tag
-        if: ${{ steps.release_type.outputs.release_type != '' }}
         run: git push origin HEAD:main --follow-tags
+
+  # 3. 생성된 태그와 버전을 기준으로 GitHub Release와 npm 배포를 마무리하는 구간입니다.
+  publish:
+    runs-on: ubuntu-latest
+    needs: version
+
+    steps:
+      # GitHub Release 생성과 npm 배포를 위해 최신 main 상태를 다시 가져옵니다.
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # npm publish와 gh CLI 사용을 위한 Node 환경을 맞춥니다.
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+          cache: npm
+
+      # 배포 시점 기준 의존성을 다시 고정 설치합니다.
+      - name: Install dependencies
+        run: npm ci
 
       # GitHub Releases 화면에 자동 생성 노트를 포함한 릴리스를 만듭니다.
       - name: Create GitHub release
-        if: ${{ steps.release_type.outputs.release_type != '' }}
         run: |
-          version="v$(node -p "require('./package.json').version")"
+          version="${{ needs.version.outputs.version }}"
           gh release create "$version" --generate-notes
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # Trusted Publishing을 이용해 npm 레지스트리에 최종 배포합니다.
       - name: Publish to npm
-        if: ${{ steps.release_type.outputs.release_type != '' }}
         run: npm publish --access public --provenance

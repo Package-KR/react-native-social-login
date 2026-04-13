@@ -33,10 +33,14 @@ const PROFILE_KEY_ORDER: (keyof KakaoProfile)[] = [
   'isEmailVerified',
   'isKorean',
   'isDefaultImage',
+  'isLeapMonth',
   'connectedAt',
   'synchedAt',
   'ci',
   'ciAuthenticatedAt',
+  'legalName',
+  'legalBirthDate',
+  'legalGender',
   'emailNeedsAgreement',
   'profileNeedsAgreement',
   'phoneNumberNeedsAgreement',
@@ -49,6 +53,9 @@ const PROFILE_KEY_ORDER: (keyof KakaoProfile)[] = [
   'profileImageNeedsAgreement',
   'nameNeedsAgreement',
   'ciNeedsAgreement',
+  'legalNameNeedsAgreement',
+  'legalBirthDateNeedsAgreement',
+  'legalGenderNeedsAgreement',
 ];
 
 // 중요도 순서대로 키를 정렬하여 JSON 변환

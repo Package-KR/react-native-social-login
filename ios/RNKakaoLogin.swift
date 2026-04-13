@@ -119,6 +119,9 @@ class RNKakaoSignin: NSObject {
             "synchedAt": user?.synchedAt as Any,
             "ci": account?.ci as Any,
             "ciAuthenticatedAt": account?.ciAuthenticatedAt as Any,
+            "legalName": account?.legalName as Any,
+            "legalBirthDate": account?.legalBirthDate as Any,
+            "legalGender": account?.legalGender?.rawValue as Any,
             "ageRangeNeedsAgreement": account?.ageRangeNeedsAgreement as Any,
             "birthdayNeedsAgreement": account?.birthdayNeedsAgreement as Any,
             "birthyearNeedsAgreement": account?.birthyearNeedsAgreement as Any,
@@ -131,6 +134,9 @@ class RNKakaoSignin: NSObject {
             "profileImageNeedsAgreement": account?.profileImageNeedsAgreement as Any,
             "nameNeedsAgreement": account?.nameNeedsAgreement as Any,
             "ciNeedsAgreement": account?.ciNeedsAgreement as Any,
+            "legalNameNeedsAgreement": account?.legalNameNeedsAgreement as Any,
+            "legalBirthDateNeedsAgreement": account?.legalBirthDateNeedsAgreement as Any,
+            "legalGenderNeedsAgreement": account?.legalGenderNeedsAgreement as Any,
           ]
           resolve(result)
         }

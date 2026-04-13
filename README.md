@@ -234,10 +234,14 @@ const terms = await serviceTerms();
 | `isEmailVerified`               | `boolean \| null` | 이메일 인증 여부                  |
 | `isKorean`                      | `boolean \| null` | 한국인 여부                       |
 | `isDefaultImage`                | `boolean \| null` | 기본 프로필 이미지 여부           |
+| `isLeapMonth`                   | `boolean \| null` | 생일 윤달 여부 (Android only)     |
 | `connectedAt`                   | `string \| null`  | 서비스 연결 시각                  |
 | `synchedAt`                     | `string \| null`  | 카카오싱크 로그인 시각            |
-| `ci`                            | `string \| null`  | 연계정보                          |
-| `ciAuthenticatedAt`             | `string \| null`  | CI 발급 시각                      |
+| `ci`                            | `string \| null`  | 연계정보 (iOS only)               |
+| `ciAuthenticatedAt`             | `string \| null`  | CI 발급 시각 (iOS only)           |
+| `legalName`                     | `string \| null`  | 법정 이름                         |
+| `legalBirthDate`                | `string \| null`  | 법정 생년월일                     |
+| `legalGender`                   | `string \| null`  | 법정 성별                         |
 | `emailNeedsAgreement`           | `boolean \| null` | 이메일 제공 동의 필요 여부        |
 | `profileNeedsAgreement`         | `boolean \| null` | 프로필 제공 동의 필요 여부        |
 | `phoneNumberNeedsAgreement`     | `boolean \| null` | 전화번호 제공 동의 필요 여부      |
@@ -249,7 +253,10 @@ const terms = await serviceTerms();
 | `profileNicknameNeedsAgreement` | `boolean \| null` | 닉네임 제공 동의 필요 여부        |
 | `profileImageNeedsAgreement`    | `boolean \| null` | 프로필 이미지 제공 동의 필요 여부 |
 | `nameNeedsAgreement`            | `boolean \| null` | 이름 제공 동의 필요 여부          |
-| `ciNeedsAgreement`              | `boolean \| null` | CI 제공 동의 필요 여부            |
+| `ciNeedsAgreement`              | `boolean \| null` | CI 제공 동의 필요 여부 (iOS only) |
+| `legalNameNeedsAgreement`       | `boolean \| null` | 법정 이름 제공 동의 필요 여부     |
+| `legalBirthDateNeedsAgreement`  | `boolean \| null` | 법정 생년월일 제공 동의 필요 여부 |
+| `legalGenderNeedsAgreement`     | `boolean \| null` | 법정 성별 제공 동의 필요 여부     |
 
 ### `KakaoAccessTokenInfo`
 

@@ -63,10 +63,14 @@ export type KakaoProfile = {
   isEmailVerified: boolean | null;
   isKorean: boolean | null;
   isDefaultImage: boolean | null;
+  isLeapMonth: boolean | null;
   connectedAt: string | null;
   synchedAt: string | null;
   ci: string | null;
   ciAuthenticatedAt: string | null;
+  legalName: string | null;
+  legalBirthDate: string | null;
+  legalGender: string | null;
   emailNeedsAgreement: boolean | null;
   profileNeedsAgreement: boolean | null;
   phoneNumberNeedsAgreement: boolean | null;
@@ -79,4 +83,7 @@ export type KakaoProfile = {
   profileImageNeedsAgreement: boolean | null;
   nameNeedsAgreement: boolean | null;
   ciNeedsAgreement: boolean | null;
+  legalNameNeedsAgreement: boolean | null;
+  legalBirthDateNeedsAgreement: boolean | null;
+  legalGenderNeedsAgreement: boolean | null;
 };

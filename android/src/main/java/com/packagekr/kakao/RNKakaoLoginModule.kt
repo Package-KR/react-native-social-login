@@ -160,10 +160,12 @@ class RNKakaoSigninModule(
             account?.isEmailVerified?.let { profile.putBoolean("isEmailVerified", it) }
             account?.isKorean?.let { profile.putBoolean("isKorean", it) }
             detail?.isDefaultImage?.let { profile.putBoolean("isDefaultImage", it) }
+            account?.isLeapMonth?.let { profile.putBoolean("isLeapMonth", it) }
             profile.putString("connectedAt", formatDate(user.connectedAt))
             profile.putString("synchedAt", formatDate(user.synchedAt))
-            account?.ci?.let { profile.putString("ci", it) }
-            profile.putString("ciAuthenticatedAt", formatDate(account?.ciAuthenticatedAt))
+            profile.putString("legalName", account?.legalName)
+            profile.putString("legalBirthDate", account?.legalBirthDate)
+            profile.putString("legalGender", account?.legalGender?.toString())
             account?.ageRangeNeedsAgreement?.let { profile.putBoolean("ageRangeNeedsAgreement", it) }
             account?.birthdayNeedsAgreement?.let { profile.putBoolean("birthdayNeedsAgreement", it) }
             account?.birthyearNeedsAgreement?.let { profile.putBoolean("birthyearNeedsAgreement", it) }
@@ -175,7 +177,9 @@ class RNKakaoSigninModule(
             account?.profileNicknameNeedsAgreement?.let { profile.putBoolean("profileNicknameNeedsAgreement", it) }
             account?.profileImageNeedsAgreement?.let { profile.putBoolean("profileImageNeedsAgreement", it) }
             account?.nameNeedsAgreement?.let { profile.putBoolean("nameNeedsAgreement", it) }
-            account?.ciNeedsAgreement?.let { profile.putBoolean("ciNeedsAgreement", it) }
+            account?.legalNameNeedsAgreement?.let { profile.putBoolean("legalNameNeedsAgreement", it) }
+            account?.legalBirthDateNeedsAgreement?.let { profile.putBoolean("legalBirthDateNeedsAgreement", it) }
+            account?.legalGenderNeedsAgreement?.let { profile.putBoolean("legalGenderNeedsAgreement", it) }
             promise.resolve(profile)
         }
     }

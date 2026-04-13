@@ -17,7 +17,7 @@
 6. `왼쪽 사이드 바 > 앱 > 플랫폼 키`로 이동 후 **네이티브 앱 키**를 확인합니다.
 
 > [!NOTE]
-> 이 키가 [README](../README.md)의 `{KAKAO_APP_KEY}`에 들어갈 값입니다.
+> 네이티브 앱 키가 [README](../README.md)의 `{KAKAO_APP_KEY}`에 들어갈 값입니다.
 
 ![애플리케이션 추가](images/kakao-console//01-add-app.png)
 

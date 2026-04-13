@@ -13,7 +13,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Package-KR/react-native-kakao-signin"
+    "url": "git+https://github.com/Package-KR/react-native-kakao-signin.git"
   },
   "files": [
     "src",

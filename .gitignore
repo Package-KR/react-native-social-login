@@ -77,18 +77,21 @@ yarn-error.log
 !.yarn/versions
 
 # example app
-/KakaoLoginExample/.env
-/KakaoLoginExample/node_modules/
-/KakaoLoginExample/android/.gradle/
-/KakaoLoginExample/android/app/build/
-/KakaoLoginExample/android/build/
-/KakaoLoginExample/ios/build/
-/KakaoLoginExample/ios/Pods/
-/KakaoLoginExample/env/.env.development
-/KakaoLoginExample/env/.env.production
+/KakaoLoginCliExample/.env
+/KakaoLoginCliExample/node_modules/
+/KakaoLoginCliExample/android/.gradle/
+/KakaoLoginCliExample/android/app/build/
+/KakaoLoginCliExample/android/build/
+/KakaoLoginCliExample/ios/build/
+/KakaoLoginCliExample/ios/Pods/
+/KakaoLoginCliExample/env/.env.development
+/KakaoLoginCliExample/env/.env.production
 
 # references
 references/
+
+# Plugin build output
+plugin/build/
 
 # AI
 CLAUDE.md

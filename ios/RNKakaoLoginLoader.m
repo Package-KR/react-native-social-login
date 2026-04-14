@@ -113,42 +113,44 @@ static void RNKakaoInstallHandler(
 
 @implementation RNKakaoSigninLoader
 
-// 앱 delegate 주입
+// 앱 실행 후 AppDelegate 클래스에만 주입
 + (void)load {
-  int classCount = objc_getClassList(NULL, 0);
-  if (classCount <= 0) {
+  [[NSNotificationCenter defaultCenter]
+    addObserver:self
+    selector:@selector(didFinishLaunching:)
+    name:UIApplicationDidFinishLaunchingNotification
+    object:nil];
+}
+
++ (void)didFinishLaunching:(NSNotification *)notification {
+  [[NSNotificationCenter defaultCenter] removeObserver:self
+    name:UIApplicationDidFinishLaunchingNotification
+    object:nil];
+
+  id<UIApplicationDelegate> delegate = UIApplication.sharedApplication.delegate;
+  if (delegate == nil) {
     return;
   }
 
-  Class *classes = (__unsafe_unretained Class *)malloc(sizeof(Class) * (NSUInteger)classCount);
-  classCount = objc_getClassList(classes, classCount);
+  Class cls = [delegate class];
+  NSLog(@"[RNKakaoSignin] Installing handlers on %@", NSStringFromClass(cls));
 
-  // UIApplicationDelegate 채택 클래스 주입
-  for (int i = 0; i < classCount; i += 1) {
-    Class cls = classes[i];
-    if (!class_conformsToProtocol(cls, @protocol(UIApplicationDelegate))) {
-      continue;
-    }
-
-    RNKakaoInstallHandler(
-      cls,
-      @selector(application:openURL:options:),
-      (IMP)RNKakaoSignin_openURL,
-      "B@:@@@",
-      RNKakaoStoreOpenURLIMP,
-      @"openURL"
-    );
-    RNKakaoInstallHandler(
-      cls,
-      @selector(application:continueUserActivity:restorationHandler:),
-      (IMP)RNKakaoSignin_continueUserActivity,
-      "B@:@@@@",
-      RNKakaoStoreUserActivityIMP,
-      @"continueUserActivity"
-    );
-  }
-
-  free(classes);
+  RNKakaoInstallHandler(
+    cls,
+    @selector(application:openURL:options:),
+    (IMP)RNKakaoSignin_openURL,
+    "B@:@@@",
+    RNKakaoStoreOpenURLIMP,
+    @"openURL"
+  );
+  RNKakaoInstallHandler(
+    cls,
+    @selector(application:continueUserActivity:restorationHandler:),
+    (IMP)RNKakaoSignin_continueUserActivity,
+    "B@:@@@@",
+    RNKakaoStoreUserActivityIMP,
+    @"continueUserActivity"
+  );
 }
 
 @end

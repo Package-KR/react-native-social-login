@@ -4,7 +4,7 @@ import KakaoSDKCommon
 import KakaoSDKAuth
 
 enum RNKakaoError {
-  // 로그인 에러 메시지 보정
+
   private static func resolveAuthMessage(
     _ reason: AuthFailureReason,
     _ authErrorInfo: AuthErrorInfo?,

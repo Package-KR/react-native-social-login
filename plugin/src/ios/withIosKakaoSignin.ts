@@ -1,11 +1,14 @@
-import { type ConfigPlugin, withInfoPlist } from "@expo/config-plugins";
+import {
+  type ConfigPlugin,
+  withInfoPlist,
+  withAppDelegate,
+} from "@expo/config-plugins";
 import type { KakaoSigninPluginProps } from "..";
 
 const KAKAO_SCHEMES = ["kakaokompassauth", "kakaotalk"];
 
 /**
  * Info.plist에 카카오 URL Scheme, KAKAO_APP_KEY, LSApplicationQueriesSchemes 추가
- * AppDelegate 수정은 불필요 (RNKakaoLoginLoader.m에서 swizzling으로 자동 처리)
  */
 const modifyInfoPlist: ConfigPlugin<KakaoSigninPluginProps> = (
   config,
@@ -48,11 +51,42 @@ const modifyInfoPlist: ConfigPlugin<KakaoSigninPluginProps> = (
   });
 };
 
+/**
+ * AppDelegate에 카카오 로그인 URL 처리 코드 주입
+ */
+const modifyAppDelegate: ConfigPlugin<KakaoSigninPluginProps> = (
+  config,
+  _props
+) => {
+  return withAppDelegate(config, (config) => {
+    const contents = config.modResults.contents;
+
+    // import 추가
+    if (!contents.includes("import KakaoSDKAuth")) {
+      config.modResults.contents = config.modResults.contents.replace(
+        /import Expo\n/,
+        "import Expo\nimport KakaoSDKAuth\n"
+      );
+    }
+
+    // openURL 메서드에 카카오 URL 처리 추가
+    if (!contents.includes("AuthApi.isKakaoTalkLoginUrl")) {
+      config.modResults.contents = config.modResults.contents.replace(
+        /(open url: URL,\n\s*options: \[UIApplication\.OpenURLOptionsKey: Any\] = \[:\]\n\s*\) -> Bool \{)\n\s*(return )/,
+        `$1\n    if AuthApi.isKakaoTalkLoginUrl(url) {\n      return AuthController.handleOpenUrl(url: url)\n    }\n    $2`
+      );
+    }
+
+    return config;
+  });
+};
+
 export const withIosKakaoSignin: ConfigPlugin<KakaoSigninPluginProps> = (
   config,
   props
 ) => {
   config = modifyInfoPlist(config, props);
+  config = modifyAppDelegate(config, props);
 
   return config;
 };

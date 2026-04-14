@@ -25,7 +25,7 @@ React Native 전용 카카오 로그인 라이브러리 입니다.
 `TurboModule` 기반으로 구현되어 있어 `New Architecture`를 지원하며,<br/>
 `Auto Linking`이 적용되어 있어 별도 네이티브 모듈 연결 작업이 필요 없습니다.<br/>
 
-RN Expo와 v0.68 미만은 추후 지원 예정입니다.
+`Expo`와 `React Native CLI` 프로젝트 모두 지원합니다.
 
 ## Prerequisites
 
@@ -101,10 +101,61 @@ npm install @package-kr/react-native-kakao-signin
 +	</array>
 ```
 
-### 2. CocoaPods 설치
+### 2. AppDelegate 설정
+
+`ios/{ProjectName}/AppDelegate.swift`에 카카오 로그인 URL 처리 코드를 추가합니다.
+
+> **Expo 사용자는 이 단계를 건너뛰세요.** Config Plugin이 자동으로 처리합니다.
+
+```swift
+import KakaoSDKAuth // 상단에 추가
+
+// AppDelegate 클래스 안에 메서드 추가
+func application(
+  _ app: UIApplication,
+  open url: URL,
+  options: [UIApplication.OpenURLOptionsKey: Any] = [:]
+) -> Bool {
+  if AuthApi.isKakaoTalkLoginUrl(url) {
+    return AuthController.handleOpenUrl(url: url)
+  }
+  return false
+}
+```
+
+### 3. CocoaPods 설치
 
 ```sh
 cd ios && pod install
+```
+
+## Expo
+
+### 1. Config Plugin 설정
+
+`app.json` 또는 `app.config.js`에 플러그인을 추가합니다.
+
+```json
+{
+  "expo": {
+    "plugins": [
+      [
+        "@package-kr/react-native-kakao-signin",
+        {
+          "kakaoAppKey": "{KAKAO_APP_KEY}"
+        }
+      ]
+    ]
+  }
+}
+```
+
+> Info.plist 설정과 AppDelegate 코드 주입이 자동으로 처리됩니다.
+
+### 2. 빌드
+
+```sh
+npx expo run:ios
 ```
 
 ## Android

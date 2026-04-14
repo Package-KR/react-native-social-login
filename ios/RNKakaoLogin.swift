@@ -12,21 +12,18 @@ class RNKakaoSignin: NSObject {
     let appKey = Bundle.main.object(forInfoDictionaryKey: "KAKAO_APP_KEY") as? String
     let customScheme = Bundle.main.object(forInfoDictionaryKey: "KAKAO_APP_SCHEME") as? String
 
-    RNKakaoSignin.configureSDK(appKey: appKey, customScheme: customScheme)
-
+    if let appKey = appKey {
+      if let customScheme = customScheme {
+        KakaoSDK.initSDK(appKey: appKey, customScheme: customScheme)
+      } else {
+        KakaoSDK.initSDK(appKey: appKey)
+      }
+    }
     super.init()
   }
 
-  // SDK 초기화 상태
-  private static var sdkInitialized = false
-
   // 메인 큐 초기화
   @objc static func requiresMainQueueSetup() -> Bool { true }
-
-  // SDK 초기화 여부 확인 (RNKakaoLoginLoader.m에서 사용)
-  @objc static func isSDKInitialized() -> Bool {
-    return sdkInitialized
-  }
 
   // 카카오톡 로그인 URL 확인
   @objc(isKakaoTalkLoginUrl:)
@@ -213,19 +210,6 @@ class RNKakaoSignin: NSObject {
         }
       }
     }
-  }
-
-  // SDK 설정
-  private static func configureSDK(appKey: String?, customScheme: String?) {
-    guard let appKey = appKey else { return }
-
-    if let customScheme = customScheme {
-      KakaoSDK.initSDK(appKey: appKey, customScheme: customScheme)
-    } else {
-      KakaoSDK.initSDK(appKey: appKey)
-    }
-
-    sdkInitialized = true
   }
 
   // 메인 스레드 실행

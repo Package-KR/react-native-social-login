@@ -23,5 +23,5 @@ const withKakaoSignin: ConfigPlugin<KakaoSigninPluginProps> = (
   return config;
 };
 
-const pak = require("@package-kr/react-native-kakao-signin/package.json");
+const pak = require("../../package.json");
 export default createRunOncePlugin(withKakaoSignin, pak.name, pak.version);

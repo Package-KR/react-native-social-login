@@ -95,7 +95,7 @@ npm install @package-kr/react-native-kakao-signin
 +	<string>{KAKAO_APP_KEY}</string>
 +	<key>LSApplicationQueriesSchemes</key>
 +	<array>
-+		<string>kakaoa{KAKAO_APP_KEY}</string>
++		<string>kakao{KAKAO_APP_KEY}</string>
 +		<string>kakaokompassauth</string>
 +		<string>kakaotalk</string>
 +	</array>

@@ -1,36 +1,72 @@
+// 에러 코드
+export type KakaoErrorCode =
+  | 'KAKAO_ACTIVITY_DOES_NOT_EXIST'
+  | 'KAKAO_ACCESS_DENIED'
+  | 'KAKAO_API_ERROR'
+  | 'KAKAO_AUTH_ERROR'
+  | 'KAKAO_BAD_PARAMETER'
+  | 'KAKAO_CANCELLED'
+  | 'KAKAO_CLIENT_ERROR'
+  | 'KAKAO_ERROR'
+  | 'KAKAO_FORBIDDEN'
+  | 'KAKAO_ILLEGAL_STATE'
+  | 'KAKAO_INVALID_APP_KEY'
+  | 'KAKAO_INVALID_BUNDLE_ID'
+  | 'KAKAO_INVALID_CLIENT'
+  | 'KAKAO_INVALID_GRANT'
+  | 'KAKAO_INVALID_REQUEST'
+  | 'KAKAO_INVALID_SCOPE'
+  | 'KAKAO_INVALID_URL_SCHEME'
+  | 'KAKAO_LOGIN_REQUIRED'
+  | 'KAKAO_MISCONFIGURED'
+  | 'KAKAO_NOT_SUPPORTED'
+  | 'KAKAO_PROFILE_NOT_FOUND'
+  | 'KAKAO_RATE_LIMIT'
+  | 'KAKAO_SERVER_ERROR'
+  | 'KAKAO_SHIPPING_ADDRESSES_NOT_FOUND'
+  | 'KAKAO_TOKEN_EXPIRED'
+  | 'KAKAO_TOKEN_NOT_FOUND'
+  | 'KAKAO_UNKNOWN_ERROR';
+
+// 에러 타입
+export type KakaoSigninError = Error & {
+  code: KakaoErrorCode;
+  sdkMessage?: string;
+};
+
 export type KakaoOAuthToken = {
   accessToken: string;
   refreshToken: string;
-  idToken: string | null;
-  accessTokenExpiresAt: string;
-  refreshTokenExpiresAt: string;
-  scopes: string[] | null;
+  accessTokenExpiresAt?: string;
+  idToken?: string;
+  refreshTokenExpiresAt?: string;
+  scopes?: string[];
 };
 
 export type KakaoAccessTokenInfo = {
   accessToken: string;
-  expiresIn: string;
+  expiresIn?: number;
 };
 
 export type KakaoShippingAddress = {
-  id: string;
-  name: string;
-  isDefault: boolean;
-  updatedAt: string;
-  type: string;
-  baseAddress: string;
-  detailAddress: string;
-  receiverName: string;
-  receiverPhoneNumber1: string;
-  receiverPhoneNumber2: string;
-  zoneNumber: string;
-  zipCode: string;
+  baseAddress?: string;
+  detailAddress?: string;
+  id?: string;
+  isDefault?: boolean;
+  name?: string;
+  receiverName?: string;
+  receiverPhoneNumber1?: string;
+  receiverPhoneNumber2?: string;
+  type?: string;
+  updatedAt?: string;
+  zipCode?: string;
+  zoneNumber?: string;
 };
 
 export type KakaoShippingAddresses = {
-  userId: string;
-  needsAgreement: boolean;
+  needsAgreement?: boolean;
   shippingAddresses: KakaoShippingAddress[];
+  userId?: string;
 };
 
 export type KakaoServiceTerm = {
@@ -42,48 +78,48 @@ export type KakaoServiceTerm = {
 };
 
 export type KakaoServiceTerms = {
-  userId: string;
   serviceTerms: KakaoServiceTerm[];
+  userId?: string;
 };
 
 export type KakaoProfile = {
-  id: number | null;
-  nickname: string | null;
-  name: string | null;
-  email: string | null;
-  profileImageUrl: string | null;
-  thumbnailImageUrl: string | null;
-  gender: string | null;
-  ageRange: string | null;
-  birthday: string | null;
-  birthdayType: string | null;
-  birthyear: string | null;
-  phoneNumber: string | null;
-  isEmailValid: boolean | null;
-  isEmailVerified: boolean | null;
-  isKorean: boolean | null;
-  isDefaultImage: boolean | null;
-  isLeapMonth: boolean | null;
-  connectedAt: string | null;
-  synchedAt: string | null;
-  ci: string | null;
-  ciAuthenticatedAt: string | null;
-  legalName: string | null;
-  legalBirthDate: string | null;
-  legalGender: string | null;
-  emailNeedsAgreement: boolean | null;
-  profileNeedsAgreement: boolean | null;
-  phoneNumberNeedsAgreement: boolean | null;
-  genderNeedsAgreement: boolean | null;
-  ageRangeNeedsAgreement: boolean | null;
-  birthdayNeedsAgreement: boolean | null;
-  birthyearNeedsAgreement: boolean | null;
-  isKoreanNeedsAgreement: boolean | null;
-  profileNicknameNeedsAgreement: boolean | null;
-  profileImageNeedsAgreement: boolean | null;
-  nameNeedsAgreement: boolean | null;
-  ciNeedsAgreement: boolean | null;
-  legalNameNeedsAgreement: boolean | null;
-  legalBirthDateNeedsAgreement: boolean | null;
-  legalGenderNeedsAgreement: boolean | null;
+  ageRange?: string;
+  ageRangeNeedsAgreement?: boolean;
+  birthday?: string;
+  birthdayNeedsAgreement?: boolean;
+  birthdayType?: string;
+  birthyear?: string;
+  birthyearNeedsAgreement?: boolean;
+  ci?: string;
+  ciAuthenticatedAt?: string;
+  ciNeedsAgreement?: boolean;
+  connectedAt?: string;
+  email?: string;
+  emailNeedsAgreement?: boolean;
+  gender?: string;
+  genderNeedsAgreement?: boolean;
+  id?: string;
+  isDefaultImage?: boolean;
+  isEmailValid?: boolean;
+  isEmailVerified?: boolean;
+  isKorean?: boolean;
+  isKoreanNeedsAgreement?: boolean;
+  isLeapMonth?: boolean;
+  legalBirthDate?: string;
+  legalBirthDateNeedsAgreement?: boolean;
+  legalGender?: string;
+  legalGenderNeedsAgreement?: boolean;
+  legalName?: string;
+  legalNameNeedsAgreement?: boolean;
+  name?: string;
+  nameNeedsAgreement?: boolean;
+  nickname?: string;
+  phoneNumber?: string;
+  phoneNumberNeedsAgreement?: boolean;
+  profileImageNeedsAgreement?: boolean;
+  profileImageUrl?: string;
+  profileNeedsAgreement?: boolean;
+  profileNicknameNeedsAgreement?: boolean;
+  synchedAt?: string;
+  thumbnailImageUrl?: string;
 };

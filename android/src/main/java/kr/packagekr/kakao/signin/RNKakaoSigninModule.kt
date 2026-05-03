@@ -7,16 +7,14 @@ import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.WritableMap
 import com.facebook.react.module.annotations.ReactModule
-import com.kakao.sdk.auth.TokenManagerProvider
-import com.kakao.sdk.common.KakaoSdk
-import com.kakao.sdk.common.model.ClientError
-import com.kakao.sdk.common.model.ClientErrorCause
-import com.kakao.sdk.common.util.Utility
-import com.kakao.sdk.user.UserApiClient
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
+
+import com.kakao.sdk.common.KakaoSdk
+import com.kakao.sdk.user.UserApiClient
+import com.kakao.sdk.auth.TokenManagerProvider
 
 @ReactModule(name = RNKakaoSigninModule.NAME)
 class RNKakaoSigninModule(
@@ -47,7 +45,7 @@ class RNKakaoSigninModule(
 
         val customScheme = resolveString("kakao_custom_scheme")
 
-        if (customScheme.isNullOrBlank()) {
+        if (customScheme == null) {
             KakaoSdk.init(reactApplicationContext, appKey)
             return
         }
@@ -58,10 +56,10 @@ class RNKakaoSigninModule(
     // 카카오톡 로그인
     @ReactMethod
     override fun login(promise: Promise) {
-        val activity = currentActivity
+        val activity = reactApplicationContext.getCurrentActivity()
 
         if (activity == null) {
-            promise.reject("E_ACTIVITY_DOES_NOT_EXIST", "Activity doesn't exist")
+            RNKakaoError.rejectActivityDoesNotExist(promise)
             return
         }
 
@@ -73,10 +71,10 @@ class RNKakaoSigninModule(
         UserApiClient.instance.loginWithKakaoTalk(activity) { token, error ->
             when {
                 token != null -> promise.resolve(resolveToken(token.accessToken, token.refreshToken, token.idToken, token.scopes))
-                error is ClientError && error.reason == ClientErrorCause.Cancelled ->
-                    promise.reject("E_CANCELLED_OPERATION", error.message, error)
+                error != null && RNKakaoError.parse(error).code == RNKakaoError.CANCELLED ->
+                    RNKakaoError.reject(promise, error)
                 error != null -> loginWithAccount(promise)
-                else -> promise.reject("E_UNKNOWN_ERROR", "Login failed")
+                else -> RNKakaoError.rejectUnknownLogin(promise)
             }
         }
     }
@@ -92,7 +90,7 @@ class RNKakaoSigninModule(
     override fun logout(promise: Promise) {
         UserApiClient.instance.logout { error ->
             if (error != null) {
-                promise.reject("E_FAILED_OPERATION", error.message, error)
+                RNKakaoError.reject(promise, error)
                 return@logout
             }
 
@@ -105,7 +103,7 @@ class RNKakaoSigninModule(
     override fun unlink(promise: Promise) {
         UserApiClient.instance.unlink { error ->
             if (error != null) {
-                promise.reject("E_FAILED_OPERATION", error.message, error)
+                RNKakaoError.reject(promise, error)
                 return@unlink
             }
 
@@ -123,7 +121,17 @@ class RNKakaoSigninModule(
             return
         }
 
-        promise.resolve(resolveToken(token.accessToken, token.refreshToken, token.idToken, token.scopes))
+        UserApiClient.instance.accessTokenInfo { info, error ->
+            if (error != null) {
+                RNKakaoError.reject(promise, error)
+                return@accessTokenInfo
+            }
+
+            val result = Arguments.createMap()
+            result.putString("accessToken", token.accessToken)
+            result.putDoubleIfPresent("expiresIn", info?.expiresIn?.toDouble())
+            promise.resolve(result)
+        }
     }
 
     // 프로필 조회
@@ -131,12 +139,12 @@ class RNKakaoSigninModule(
     override fun getProfile(promise: Promise) {
         UserApiClient.instance.me { user, error ->
             if (error != null) {
-                promise.reject("E_FAILED_OPERATION", error.message, error)
+                RNKakaoError.reject(promise, error)
                 return@me
             }
 
             if (user == null) {
-                promise.reject("E_PROFILE_NOT_FOUND", "Profile not found")
+                RNKakaoError.rejectProfileNotFound(promise)
                 return@me
             }
 
@@ -144,42 +152,42 @@ class RNKakaoSigninModule(
             val account = user.kakaoAccount
             val detail = account?.profile
 
-            profile.putString("id", user.id?.toString())
-            profile.putString("name", account?.name)
-            profile.putString("email", account?.email)
-            profile.putString("nickname", detail?.nickname)
-            profile.putString("profileImageUrl", detail?.profileImageUrl)
-            profile.putString("thumbnailImageUrl", detail?.thumbnailImageUrl)
-            profile.putString("phoneNumber", account?.phoneNumber)
-            profile.putString("ageRange", account?.ageRange?.toString())
-            profile.putString("birthday", account?.birthday)
-            profile.putString("birthdayType", account?.birthdayType?.toString())
-            profile.putString("birthyear", account?.birthyear)
-            profile.putString("gender", account?.gender?.toString())
-            account?.isEmailValid?.let { profile.putBoolean("isEmailValid", it) }
-            account?.isEmailVerified?.let { profile.putBoolean("isEmailVerified", it) }
-            account?.isKorean?.let { profile.putBoolean("isKorean", it) }
-            detail?.isDefaultImage?.let { profile.putBoolean("isDefaultImage", it) }
-            account?.isLeapMonth?.let { profile.putBoolean("isLeapMonth", it) }
-            profile.putString("connectedAt", formatDate(user.connectedAt))
-            profile.putString("synchedAt", formatDate(user.synchedAt))
-            profile.putString("legalName", account?.legalName)
-            profile.putString("legalBirthDate", account?.legalBirthDate)
-            profile.putString("legalGender", account?.legalGender?.toString())
-            account?.ageRangeNeedsAgreement?.let { profile.putBoolean("ageRangeNeedsAgreement", it) }
-            account?.birthdayNeedsAgreement?.let { profile.putBoolean("birthdayNeedsAgreement", it) }
-            account?.birthyearNeedsAgreement?.let { profile.putBoolean("birthyearNeedsAgreement", it) }
-            account?.emailNeedsAgreement?.let { profile.putBoolean("emailNeedsAgreement", it) }
-            account?.genderNeedsAgreement?.let { profile.putBoolean("genderNeedsAgreement", it) }
-            account?.isKoreanNeedsAgreement?.let { profile.putBoolean("isKoreanNeedsAgreement", it) }
-            account?.phoneNumberNeedsAgreement?.let { profile.putBoolean("phoneNumberNeedsAgreement", it) }
-            account?.profileNeedsAgreement?.let { profile.putBoolean("profileNeedsAgreement", it) }
-            account?.profileNicknameNeedsAgreement?.let { profile.putBoolean("profileNicknameNeedsAgreement", it) }
-            account?.profileImageNeedsAgreement?.let { profile.putBoolean("profileImageNeedsAgreement", it) }
-            account?.nameNeedsAgreement?.let { profile.putBoolean("nameNeedsAgreement", it) }
-            account?.legalNameNeedsAgreement?.let { profile.putBoolean("legalNameNeedsAgreement", it) }
-            account?.legalBirthDateNeedsAgreement?.let { profile.putBoolean("legalBirthDateNeedsAgreement", it) }
-            account?.legalGenderNeedsAgreement?.let { profile.putBoolean("legalGenderNeedsAgreement", it) }
+            profile.putStringIfPresent("id", user.id?.toString())
+            profile.putStringIfPresent("name", account?.name)
+            profile.putStringIfPresent("email", account?.email)
+            profile.putStringIfPresent("nickname", detail?.nickname)
+            profile.putStringIfPresent("profileImageUrl", detail?.profileImageUrl)
+            profile.putStringIfPresent("thumbnailImageUrl", detail?.thumbnailImageUrl)
+            profile.putStringIfPresent("phoneNumber", account?.phoneNumber)
+            profile.putStringIfPresent("ageRange", account?.ageRange?.toString())
+            profile.putStringIfPresent("birthday", account?.birthday)
+            profile.putStringIfPresent("birthdayType", account?.birthdayType?.toString())
+            profile.putStringIfPresent("birthyear", account?.birthyear)
+            profile.putStringIfPresent("gender", account?.gender?.toString())
+            profile.putBooleanIfPresent("isEmailValid", account?.isEmailValid)
+            profile.putBooleanIfPresent("isEmailVerified", account?.isEmailVerified)
+            profile.putBooleanIfPresent("isKorean", account?.isKorean)
+            profile.putBooleanIfPresent("isDefaultImage", detail?.isDefaultImage)
+            profile.putBooleanIfPresent("isLeapMonth", account?.isLeapMonth)
+            profile.putStringIfPresent("connectedAt", formatDate(user.connectedAt))
+            profile.putStringIfPresent("synchedAt", formatDate(user.synchedAt))
+            profile.putStringIfPresent("legalName", account?.legalName)
+            profile.putStringIfPresent("legalBirthDate", account?.legalBirthDate)
+            profile.putStringIfPresent("legalGender", account?.legalGender?.toString())
+            profile.putBooleanIfPresent("ageRangeNeedsAgreement", account?.ageRangeNeedsAgreement)
+            profile.putBooleanIfPresent("birthdayNeedsAgreement", account?.birthdayNeedsAgreement)
+            profile.putBooleanIfPresent("birthyearNeedsAgreement", account?.birthyearNeedsAgreement)
+            profile.putBooleanIfPresent("emailNeedsAgreement", account?.emailNeedsAgreement)
+            profile.putBooleanIfPresent("genderNeedsAgreement", account?.genderNeedsAgreement)
+            profile.putBooleanIfPresent("isKoreanNeedsAgreement", account?.isKoreanNeedsAgreement)
+            profile.putBooleanIfPresent("phoneNumberNeedsAgreement", account?.phoneNumberNeedsAgreement)
+            profile.putBooleanIfPresent("profileNeedsAgreement", account?.profileNeedsAgreement)
+            profile.putBooleanIfPresent("profileNicknameNeedsAgreement", account?.profileNicknameNeedsAgreement)
+            profile.putBooleanIfPresent("profileImageNeedsAgreement", account?.profileImageNeedsAgreement)
+            profile.putBooleanIfPresent("nameNeedsAgreement", account?.nameNeedsAgreement)
+            profile.putBooleanIfPresent("legalNameNeedsAgreement", account?.legalNameNeedsAgreement)
+            profile.putBooleanIfPresent("legalBirthDateNeedsAgreement", account?.legalBirthDateNeedsAgreement)
+            profile.putBooleanIfPresent("legalGenderNeedsAgreement", account?.legalGenderNeedsAgreement)
             promise.resolve(profile)
         }
     }
@@ -189,34 +197,34 @@ class RNKakaoSigninModule(
     override fun shippingAddresses(promise: Promise) {
         UserApiClient.instance.shippingAddresses { addresses, error ->
             if (error != null) {
-                promise.reject("E_FAILED_OPERATION", error.message, error)
+                RNKakaoError.reject(promise, error)
                 return@shippingAddresses
             }
 
             if (addresses == null) {
-                promise.reject("E_SHIPPING_ADDRESSES_NOT_FOUND", "Shipping addresses not found")
+                RNKakaoError.rejectShippingAddressesNotFound(promise)
                 return@shippingAddresses
             }
 
             val result = Arguments.createMap()
-            result.putString("userId", addresses.userId?.toString())
-            addresses.needsAgreement?.let { result.putBoolean("needsAgreement", it) }
+            result.putStringIfPresent("userId", addresses.userId?.toString())
+            result.putBooleanIfPresent("needsAgreement", addresses.needsAgreement)
 
             val array = Arguments.createArray()
             addresses.shippingAddresses?.map { addr ->
                 Arguments.createMap().apply {
-                    putString("id", addr.id?.toString())
-                    putString("name", addr.name)
-                    addr.isDefault?.let { putBoolean("isDefault", it) }
-                    putString("updatedAt", formatDate(addr.updatedAt))
-                    putString("type", addr.type?.toString())
-                    putString("baseAddress", addr.baseAddress)
-                    putString("detailAddress", addr.detailAddress)
-                    putString("receiverName", addr.receiverName)
-                    putString("receiverPhoneNumber1", addr.receiverPhoneNumber1)
-                    putString("receiverPhoneNumber2", addr.receiverPhoneNumber2)
-                    putString("zoneNumber", addr.zoneNumber)
-                    putString("zipCode", addr.zipCode)
+                    putStringIfPresent("id", addr.id?.toString())
+                    putStringIfPresent("name", addr.name)
+                    putBooleanIfPresent("isDefault", addr.isDefault)
+                    putStringIfPresent("updatedAt", formatDate(addr.updatedAt))
+                    putStringIfPresent("type", addr.type?.toString())
+                    putStringIfPresent("baseAddress", addr.baseAddress)
+                    putStringIfPresent("detailAddress", addr.detailAddress)
+                    putStringIfPresent("receiverName", addr.receiverName)
+                    putStringIfPresent("receiverPhoneNumber1", addr.receiverPhoneNumber1)
+                    putStringIfPresent("receiverPhoneNumber2", addr.receiverPhoneNumber2)
+                    putStringIfPresent("zoneNumber", addr.zoneNumber)
+                    putStringIfPresent("zipCode", addr.zipCode)
                 }
             }?.forEach(array::pushMap)
             result.putArray("shippingAddresses", array)
@@ -230,7 +238,7 @@ class RNKakaoSigninModule(
     override fun serviceTerms(promise: Promise) {
         UserApiClient.instance.serviceTerms { terms, error ->
             if (error != null) {
-                promise.reject("E_FAILED_OPERATION", error.message, error)
+                RNKakaoError.reject(promise, error)
                 return@serviceTerms
             }
 
@@ -240,16 +248,14 @@ class RNKakaoSigninModule(
             val array = Arguments.createArray()
             terms?.serviceTerms?.map { term ->
                 Arguments.createMap().apply {
-                    putString("tag", term.tag)
+                    putStringIfPresent("tag", term.tag)
                     putBoolean("agreed", term.agreed)
                     putBoolean("required", term.required)
                     putBoolean("revocable", term.revocable)
-                    term.agreedAt?.let { putString("agreedAt", formatDate(it)) }
+                    putStringIfPresent("agreedAt", formatDate(term.agreedAt))
                 }
             }?.forEach(array::pushMap)
-            if (array.size() > 0) {
-                result.putArray("serviceTerms", array)
-            }
+            result.putArray("serviceTerms", array)
 
             promise.resolve(result)
         }
@@ -257,18 +263,18 @@ class RNKakaoSigninModule(
 
     // 카카오계정 웹 로그인
     private fun loginWithAccount(promise: Promise) {
-        val activity = currentActivity
+        val activity = reactApplicationContext.getCurrentActivity()
 
         if (activity == null) {
-            promise.reject("E_ACTIVITY_DOES_NOT_EXIST", "Activity doesn't exist")
+            RNKakaoError.rejectActivityDoesNotExist(promise)
             return
         }
 
         UserApiClient.instance.loginWithKakaoAccount(activity) { token, error ->
             when {
                 token != null -> promise.resolve(resolveToken(token.accessToken, token.refreshToken, token.idToken, token.scopes))
-                error != null -> promise.reject(resolveErrorCode(error), error.message, error)
-                else -> promise.reject("E_UNKNOWN_ERROR", "Login failed")
+                error != null -> RNKakaoError.reject(promise, error)
+                else -> RNKakaoError.rejectUnknownLogin(promise)
             }
         }
     }
@@ -281,7 +287,7 @@ class RNKakaoSigninModule(
                 PackageManager.GET_META_DATA
             )
 
-            packageInfo.metaData?.getString(key)
+            packageInfo.metaData?.getString(key)?.trim()?.takeIf { it.isNotEmpty() }
         } catch (_: Exception) {
             null
         }
@@ -299,7 +305,7 @@ class RNKakaoSigninModule(
             return null
         }
 
-        return reactApplicationContext.getString(resourceId)
+        return reactApplicationContext.getString(resourceId).trim().takeIf { it.isNotEmpty() }
     }
 
     // 토큰 응답 생성
@@ -309,24 +315,37 @@ class RNKakaoSigninModule(
 
         token.putString("accessToken", accessToken)
         token.putString("refreshToken", refreshToken)
-        token.putString("idToken", idToken)
-        token.putString("accessTokenExpiresAt", formatDate(current?.accessTokenExpiresAt))
-        token.putString("refreshTokenExpiresAt", formatDate(current?.refreshTokenExpiresAt))
-        token.putString("appKeyHash", Utility.getKeyHash(reactApplicationContext))
+        token.putStringIfPresent("idToken", idToken)
+        token.putStringIfPresent("accessTokenExpiresAt", formatDate(current?.accessTokenExpiresAt))
+        token.putStringIfPresent("refreshTokenExpiresAt", formatDate(current?.refreshTokenExpiresAt))
 
-        val scopeArray = Arguments.createArray()
-        scopes?.forEach { scopeArray.pushString(it) }
-        token.putArray("scopes", scopeArray)
+        if (scopes != null) {
+            val scopeArray = Arguments.createArray()
+            scopes.forEach { scopeArray.pushString(it) }
+            token.putArray("scopes", scopeArray)
+        }
 
         return token
     }
 
-    // 에러 코드 변환
-    private fun resolveErrorCode(error: Throwable): String {
-        return when {
-            error is ClientError && error.reason == ClientErrorCause.Cancelled ->
-                "E_CANCELLED_OPERATION"
-            else -> "E_FAILED_OPERATION"
+    // 선택값 입력
+    private fun WritableMap.putStringIfPresent(key: String, value: String?) {
+        val normalized = value?.trim()?.takeIf { it.isNotEmpty() }
+
+        if (normalized != null) {
+            putString(key, normalized)
+        }
+    }
+
+    private fun WritableMap.putBooleanIfPresent(key: String, value: Boolean?) {
+        if (value != null) {
+            putBoolean(key, value)
+        }
+    }
+
+    private fun WritableMap.putDoubleIfPresent(key: String, value: Double?) {
+        if (value != null) {
+            putDouble(key, value)
         }
     }
 

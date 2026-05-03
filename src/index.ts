@@ -19,12 +19,12 @@ export const loginWithKakaoAccount = (): Promise<KakaoOAuthToken> => {
 };
 
 // 로그아웃
-export const logout = (): Promise<string> => {
+export const logout = (): Promise<boolean> => {
   return NativeKakaoSignin.logout();
 };
 
 // 연결 끊기
-export const unlink = (): Promise<string> => {
+export const unlink = (): Promise<boolean> => {
   return NativeKakaoSignin.unlink();
 };
 
@@ -34,8 +34,8 @@ export const getProfile = (): Promise<KakaoProfile> => {
 };
 
 // 토큰 정보 조회
-export const getAccessToken = (): Promise<KakaoAccessTokenInfo> => {
-  return NativeKakaoSignin.getAccessToken() as unknown as Promise<KakaoAccessTokenInfo>;
+export const getAccessToken = (): Promise<KakaoAccessTokenInfo | null> => {
+  return NativeKakaoSignin.getAccessToken() as unknown as Promise<KakaoAccessTokenInfo | null>;
 };
 
 // 배송지 조회

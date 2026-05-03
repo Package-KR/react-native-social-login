@@ -9,17 +9,18 @@ class RNKakaoSignin: NSObject {
 
   // SDK 초기화
   public override init() {
-    let appKey = Bundle.main.object(forInfoDictionaryKey: "KAKAO_APP_KEY") as? String
-    let customScheme = Bundle.main.object(forInfoDictionaryKey: "KAKAO_APP_SCHEME") as? String
+    super.init()
+    configureKakaoSdk()
+  }
 
-    if let appKey = appKey {
-      if let customScheme = customScheme {
+  private func configureKakaoSdk() {
+    if let appKey = RNKakaoSigninHelper.resolveAppKey() {
+      if let customScheme = RNKakaoSigninHelper.resolveCustomScheme(appKey: appKey) {
         KakaoSDK.initSDK(appKey: appKey, customScheme: customScheme)
       } else {
         KakaoSDK.initSDK(appKey: appKey)
       }
     }
-    super.init()
   }
 
   // 메인 큐 초기화
@@ -60,20 +61,18 @@ class RNKakaoSignin: NSObject {
     runOnMain { UserApi.shared.loginWithKakaoAccount(completion: self.tokenHandler(resolve, reject)) }
   }
 
-  // 세션 처리
-
   // 로그아웃
   @objc(logout:rejecter:)
   func logout(_ resolve: @escaping RCTPromiseResolveBlock,
               rejecter reject: @escaping RCTPromiseRejectBlock) {
-    runOnMain { UserApi.shared.logout(completion: self.messageHandler(resolve, reject, "Successfully logged out")) }
+    runOnMain { UserApi.shared.logout(completion: self.unitHandler(resolve, reject)) }
   }
 
   // 연결 끊기
   @objc(unlink:rejecter:)
   func unlink(_ resolve: @escaping RCTPromiseResolveBlock,
               rejecter reject: @escaping RCTPromiseRejectBlock) {
-    runOnMain { UserApi.shared.unlink(completion: self.messageHandler(resolve, reject, "Successfully unlinked")) }
+    runOnMain { UserApi.shared.unlink(completion: self.unitHandler(resolve, reject)) }
   }
 
   // 토큰 정보 조회
@@ -81,13 +80,18 @@ class RNKakaoSignin: NSObject {
   func getAccessToken(_ resolve: @escaping RCTPromiseResolveBlock,
                       rejecter reject: @escaping RCTPromiseRejectBlock) {
     runOnMain {
+      guard let token = TokenManager.manager.getToken() else {
+        resolve(nil)
+        return
+      }
+
       UserApi.shared.accessTokenInfo { info, error in
         if let error = error { self.reject(reject, error) }
         else {
-          resolve([
-            "accessToken": TokenManager.manager.getToken()?.accessToken as Any,
+          resolve(RNKakaoSigninHelper.compact([
+            "accessToken": token.accessToken,
             "expiresIn": info?.expiresIn as Any,
-          ])
+          ]))
         }
       }
     }
@@ -100,11 +104,15 @@ class RNKakaoSignin: NSObject {
     runOnMain {
       UserApi.shared.me { user, error in
         if let error = error { self.reject(reject, error) }
+        else if user == nil {
+          self.rejectParsed(reject, RNKakaoError.profileNotFound())
+        }
         else {
           let account = user?.kakaoAccount
           let profile = account?.profile
-          let result: [String: Any?] = [
-            "id": user?.id as Any,
+          let fmt = RNKakaoSigninHelper.dateFormatter
+          let result = RNKakaoSigninHelper.compact([
+            "id": user?.id.map { String($0) } as Any,
             "name": account?.name as Any,
             "email": account?.email as Any,
             "nickname": profile?.nickname as Any,
@@ -120,10 +128,10 @@ class RNKakaoSignin: NSObject {
             "isEmailVerified": account?.isEmailVerified as Any,
             "isKorean": account?.isKorean as Any,
             "isDefaultImage": profile?.isDefaultImage as Any,
-            "connectedAt": user?.connectedAt as Any,
-            "synchedAt": user?.synchedAt as Any,
+            "connectedAt": user?.connectedAt.map { fmt.string(from: $0) } as Any,
+            "synchedAt": user?.synchedAt.map { fmt.string(from: $0) } as Any,
             "ci": account?.ci as Any,
-            "ciAuthenticatedAt": account?.ciAuthenticatedAt as Any,
+            "ciAuthenticatedAt": account?.ciAuthenticatedAt.map { fmt.string(from: $0) } as Any,
             "legalName": account?.legalName as Any,
             "legalBirthDate": account?.legalBirthDate as Any,
             "legalGender": account?.legalGender?.rawValue as Any,
@@ -142,7 +150,7 @@ class RNKakaoSignin: NSObject {
             "legalNameNeedsAgreement": account?.legalNameNeedsAgreement as Any,
             "legalBirthDateNeedsAgreement": account?.legalBirthDateNeedsAgreement as Any,
             "legalGenderNeedsAgreement": account?.legalGenderNeedsAgreement as Any,
-          ]
+          ])
           resolve(result)
         }
       }
@@ -157,15 +165,18 @@ class RNKakaoSignin: NSObject {
       let fmt = RNKakaoSigninHelper.dateFormatter
       UserApi.shared.shippingAddresses { addresses, error in
         if let error = error { self.reject(reject, error) }
+        else if addresses == nil {
+          self.rejectParsed(reject, RNKakaoError.shippingAddressesNotFound())
+        }
         else {
-          resolve([
-            "userId": addresses?.userId as Any,
+          resolve(RNKakaoSigninHelper.compact([
+            "userId": addresses?.userId.map { String($0) } as Any,
             "needsAgreement": addresses?.needsAgreement as Any,
-            "shippingAddresses": addresses?.shippingAddresses?.map { addr in [
-              "id": addr.id as Any,
+            "shippingAddresses": addresses?.shippingAddresses?.map { addr in RNKakaoSigninHelper.compact([
+              "id": String(addr.id),
               "name": addr.name as Any,
               "isDefault": addr.isDefault as Any,
-              "updatedAt": fmt.string(from: addr.updatedAt!) as Any,
+              "updatedAt": addr.updatedAt.map { fmt.string(from: $0) } as Any,
               "type": addr.type?.rawValue as Any,
               "baseAddress": addr.baseAddress as Any,
               "detailAddress": addr.detailAddress as Any,
@@ -174,8 +185,8 @@ class RNKakaoSignin: NSObject {
               "receiverPhoneNumber2": addr.receiverPhoneNumber2 as Any,
               "zoneNumber": addr.zoneNumber as Any,
               "zipCode": addr.zipCode as Any,
-            ]} as Any,
-          ])
+            ])} as Any,
+          ]))
         }
       }
     }
@@ -190,10 +201,10 @@ class RNKakaoSignin: NSObject {
       UserApi.shared.serviceTerms { terms, error in
         if let error = error { self.reject(reject, error) }
         else {
-          var result: [String: Any] = [:]
-          if let userId = terms?.id { result["userId"] = userId }
-          if let serviceTerms = terms?.serviceTerms {
-            result["serviceTerms"] = serviceTerms.map { term -> [String: Any] in
+          let serviceTerms = terms?.serviceTerms ?? []
+          let result = RNKakaoSigninHelper.compact([
+            "userId": terms.map { String($0.id) } as Any,
+            "serviceTerms": serviceTerms.map { term -> [String: Any] in
               var dict: [String: Any] = [
                 "tag": term.tag,
                 "agreed": term.agreed,
@@ -204,8 +215,8 @@ class RNKakaoSignin: NSObject {
                 dict["agreedAt"] = fmt.string(from: agreedAt)
               }
               return dict
-            }
-          }
+            },
+          ])
           resolve(result)
         }
       }
@@ -224,25 +235,37 @@ class RNKakaoSignin: NSObject {
   ) -> (OAuthToken?, Error?) -> Void {
     return { token, error in
       if let error = error { self.reject(reject, error) }
+      else if token == nil {
+        self.rejectParsed(reject, RNKakaoError.unknownLogin())
+      }
       else { resolve(RNKakaoSigninHelper.tokenToDict(token)) }
     }
   }
 
-  // 메시지 응답 콜백
-  private func messageHandler(
+  // 성공 응답 콜백
+  private func unitHandler(
     _ resolve: @escaping RCTPromiseResolveBlock,
-    _ reject: @escaping RCTPromiseRejectBlock,
-    _ message: String
+    _ reject: @escaping RCTPromiseRejectBlock
   ) -> (Error?) -> Void {
     return { error in
       if let error = error { self.reject(reject, error) }
-      else { resolve(message) }
+      else { resolve(true) }
     }
   }
 
   // 에러 변환
   private func reject(_ reject: RCTPromiseRejectBlock, _ error: Error) {
-    let (code, message) = RNKakaoError.parse(error)
-    reject(code, message, error)
+    rejectParsed(reject, RNKakaoError.parse(error))
+  }
+
+  private func rejectParsed(_ reject: RCTPromiseRejectBlock, _ error: RNKakaoError.ParsedError) {
+    var userInfo: [String: Any] = [NSLocalizedDescriptionKey: error.message]
+
+    if let sdkMessage = error.sdkMessage {
+      userInfo["sdkMessage"] = sdkMessage
+    }
+
+    let nativeError = NSError(domain: "RNKakaoSignin", code: 0, userInfo: userInfo)
+    reject(error.code, error.message, nativeError)
   }
 }

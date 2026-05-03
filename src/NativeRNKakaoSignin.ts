@@ -1,15 +1,105 @@
 import type { TurboModule } from 'react-native';
 import { TurboModuleRegistry } from 'react-native';
 
+type NativeKakaoOAuthToken = {
+  accessToken: string;
+  refreshToken: string;
+  accessTokenExpiresAt?: string;
+  idToken?: string;
+  refreshTokenExpiresAt?: string;
+  scopes?: string[];
+};
+
+type NativeKakaoAccessTokenInfo = {
+  accessToken: string;
+  expiresIn?: number;
+};
+
+type NativeKakaoProfile = {
+  ageRange?: string;
+  ageRangeNeedsAgreement?: boolean;
+  birthday?: string;
+  birthdayNeedsAgreement?: boolean;
+  birthdayType?: string;
+  birthyear?: string;
+  birthyearNeedsAgreement?: boolean;
+  ci?: string;
+  ciAuthenticatedAt?: string;
+  ciNeedsAgreement?: boolean;
+  connectedAt?: string;
+  email?: string;
+  emailNeedsAgreement?: boolean;
+  gender?: string;
+  genderNeedsAgreement?: boolean;
+  id?: string;
+  isDefaultImage?: boolean;
+  isEmailValid?: boolean;
+  isEmailVerified?: boolean;
+  isKorean?: boolean;
+  isKoreanNeedsAgreement?: boolean;
+  isLeapMonth?: boolean;
+  legalBirthDate?: string;
+  legalBirthDateNeedsAgreement?: boolean;
+  legalGender?: string;
+  legalGenderNeedsAgreement?: boolean;
+  legalName?: string;
+  legalNameNeedsAgreement?: boolean;
+  name?: string;
+  nameNeedsAgreement?: boolean;
+  nickname?: string;
+  phoneNumber?: string;
+  phoneNumberNeedsAgreement?: boolean;
+  profileImageNeedsAgreement?: boolean;
+  profileImageUrl?: string;
+  profileNeedsAgreement?: boolean;
+  profileNicknameNeedsAgreement?: boolean;
+  synchedAt?: string;
+  thumbnailImageUrl?: string;
+};
+
+type NativeKakaoShippingAddress = {
+  baseAddress?: string;
+  detailAddress?: string;
+  id?: string;
+  isDefault?: boolean;
+  name?: string;
+  receiverName?: string;
+  receiverPhoneNumber1?: string;
+  receiverPhoneNumber2?: string;
+  type?: string;
+  updatedAt?: string;
+  zipCode?: string;
+  zoneNumber?: string;
+};
+
+type NativeKakaoShippingAddresses = {
+  needsAgreement?: boolean;
+  shippingAddresses: NativeKakaoShippingAddress[];
+  userId?: string;
+};
+
+type NativeKakaoServiceTerm = {
+  tag: string;
+  agreed: boolean;
+  required: boolean;
+  revocable: boolean;
+  agreedAt?: string;
+};
+
+type NativeKakaoServiceTerms = {
+  serviceTerms: NativeKakaoServiceTerm[];
+  userId?: string;
+};
+
 export interface Spec extends TurboModule {
-  login(): Promise<{ [key: string]: Object }>;
-  loginWithKakaoAccount(): Promise<{ [key: string]: Object }>;
-  logout(): Promise<string>;
-  unlink(): Promise<string>;
-  getProfile(): Promise<{ [key: string]: Object }>;
-  getAccessToken(): Promise<{ [key: string]: Object }>;
-  shippingAddresses(): Promise<{ [key: string]: Object }>;
-  serviceTerms(): Promise<{ [key: string]: Object }>;
+  login(): Promise<NativeKakaoOAuthToken>;
+  loginWithKakaoAccount(): Promise<NativeKakaoOAuthToken>;
+  logout(): Promise<boolean>;
+  unlink(): Promise<boolean>;
+  getProfile(): Promise<NativeKakaoProfile>;
+  getAccessToken(): Promise<NativeKakaoAccessTokenInfo | null>;
+  shippingAddresses(): Promise<NativeKakaoShippingAddresses>;
+  serviceTerms(): Promise<NativeKakaoServiceTerms>;
 }
 
 export default TurboModuleRegistry.getEnforcing<Spec>('RNKakaoSignin');

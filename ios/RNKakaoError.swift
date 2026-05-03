@@ -1,100 +1,211 @@
 import Foundation
-
-import KakaoSDKCommon
 import KakaoSDKAuth
+import KakaoSDKCommon
+import KakaoSDKUser
 
 enum RNKakaoError {
+  typealias ParsedError = (code: String, message: String, sdkMessage: String?)
 
-  private static func resolveAuthMessage(
-    _ reason: AuthFailureReason,
-    _ authErrorInfo: AuthErrorInfo?,
-    _ fallback: String
-  ) -> (code: String, message: String) {
-    let description = authErrorInfo?.errorDescription?.trimmingCharacters(in: .whitespacesAndNewlines)
-    let normalizedDescription = description?.lowercased() ?? ""
+  // 에러 코드
+  private enum Code {
+    static let accessDenied = "KAKAO_ACCESS_DENIED"
+    static let apiError = "KAKAO_API_ERROR"
+    static let authError = "KAKAO_AUTH_ERROR"
+    static let badParameter = "KAKAO_BAD_PARAMETER"
+    static let cancelled = "KAKAO_CANCELLED"
+    static let clientError = "KAKAO_CLIENT_ERROR"
+    static let defaultError = "KAKAO_ERROR"
+    static let forbidden = "KAKAO_FORBIDDEN"
+    static let illegalState = "KAKAO_ILLEGAL_STATE"
+    static let invalidAppKey = "KAKAO_INVALID_APP_KEY"
+    static let invalidBundleId = "KAKAO_INVALID_BUNDLE_ID"
+    static let invalidClient = "KAKAO_INVALID_CLIENT"
+    static let invalidGrant = "KAKAO_INVALID_GRANT"
+    static let invalidRequest = "KAKAO_INVALID_REQUEST"
+    static let invalidScope = "KAKAO_INVALID_SCOPE"
+    static let invalidUrlScheme = "KAKAO_INVALID_URL_SCHEME"
+    static let loginRequired = "KAKAO_LOGIN_REQUIRED"
+    static let misconfigured = "KAKAO_MISCONFIGURED"
+    static let notSupported = "KAKAO_NOT_SUPPORTED"
+    static let profileNotFound = "KAKAO_PROFILE_NOT_FOUND"
+    static let rateLimit = "KAKAO_RATE_LIMIT"
+    static let serverError = "KAKAO_SERVER_ERROR"
+    static let shippingAddressesNotFound = "KAKAO_SHIPPING_ADDRESSES_NOT_FOUND"
+    static let tokenExpired = "KAKAO_TOKEN_EXPIRED"
+    static let tokenNotFound = "KAKAO_TOKEN_NOT_FOUND"
+    static let unknownLogin = "KAKAO_UNKNOWN_LOGIN"
+  }
 
+  // 에러 메시지
+  private enum Message {
+    static let accessDenied = "Kakao login was cancelled or access was denied."
+    static let apiError = "A Kakao API error occurred."
+    static let authError = "A Kakao authentication error occurred."
+    static let badParameter = "Invalid parameter."
+    static let cancelled = "Login was cancelled."
+    static let clientError = "A Kakao client error occurred."
+    static let defaultError = "An error occurred while processing the Kakao request."
+    static let forbidden = "Permission is required. Please check the consent items."
+    static let illegalState = "Invalid state."
+    static let invalidAppKey = "The Kakao native app key is invalid. Please check your Kakao app key configuration."
+    static let invalidBundleId = "The iOS bundle ID is invalid. Please check the iOS bundle ID in Kakao Developers and your Xcode settings."
+    static let invalidClient = "The Kakao iOS app configuration is invalid. Please check the app key, bundle ID, URL scheme, and platform settings."
+    static let invalidGrant = "The authorization information is invalid. Please sign in again."
+    static let invalidRequest = "The Kakao login request is invalid. Please check your iOS app configuration and request parameters."
+    static let invalidScope = "The requested scope is invalid. Please check the requested consent items and Kakao Developers settings."
+    static let invalidUrlScheme = "The iOS URL scheme is invalid. Please check CFBundleURLTypes, KAKAO_APP_SCHEME, and Kakao Developers settings."
+    static let loginRequired = "Kakao login authorization is required. Please check app permissions and platform settings."
+    static let misconfigured = "The Kakao iOS configuration is invalid. Please check the bundle ID, URL scheme, KAKAO_APP_KEY, and Kakao Developers settings."
+    static let notSupported = "This feature is not supported."
+    static let profileNotFound = "Kakao profile information could not be found."
+    static let rateLimit = "Too many requests. Please try again later."
+    static let serverError = "A Kakao server error occurred. Please try again later."
+    static let shippingAddressesNotFound = "Kakao shipping address information could not be found."
+    static let tokenExpired = "Authentication has expired. Please sign in again."
+    static let tokenNotFound = "Sign-in is required."
+    static let unknownLogin = "Kakao login failed."
+  }
+
+  // 프로필 없음
+  static func profileNotFound() -> ParsedError {
+    return make(Code.profileNotFound, Message.profileNotFound)
+  }
+
+  // 배송지 없음
+  static func shippingAddressesNotFound() -> ParsedError {
+    return make(Code.shippingAddressesNotFound, Message.shippingAddressesNotFound)
+  }
+
+  // 로그인 실패
+  static func unknownLogin() -> ParsedError {
+    return make(Code.unknownLogin, Message.unknownLogin)
+  }
+
+  // SDK 에러 변환
+  static func parse(_ error: Error) -> ParsedError {
+    let sdkMessage = resolveSdkMessage(error)
+
+    if let sdkError = error as? SdkError {
+      switch sdkError {
+      case .ClientFailed(let reason, _):
+        return resolveClientError(reason, sdkMessage)
+      case .ApiFailed(let reason, _):
+        return resolveApiError(reason, sdkMessage)
+      case .AuthFailed(let reason, _):
+        return resolveAuthError(reason, sdkMessage)
+      case .AppsFailed(_, _):
+        return make(Code.apiError, Message.apiError, sdkMessage)
+      }
+    }
+
+    return make(Code.defaultError, Message.defaultError, sdkMessage)
+  }
+
+  // 클라이언트 에러 변환
+  private static func resolveClientError(_ reason: ClientFailureReason, _ sdkMessage: String?) -> ParsedError {
     switch reason {
-    case .InvalidRequest:
-      if normalizedDescription.contains("bundle") {
-        return ("KAKAO_INVALID_BUNDLE_ID", "iOS 번들 ID 설정이 올바르지 않습니다. Kakao 콘솔의 iOS 번들 ID와 Xcode 설정을 확인해주세요.")
-      }
-      if normalizedDescription.contains("scheme") || normalizedDescription.contains("redirect") {
-        return ("KAKAO_INVALID_URL_SCHEME", "iOS URL scheme 설정이 올바르지 않습니다. Info.plist의 URL Types, KAKAO_APP_SCHEME, Kakao 콘솔 설정을 확인해주세요.")
-      }
-      if normalizedDescription.contains("client") || normalizedDescription.contains("app key") {
-        return ("KAKAO_INVALID_APP_KEY", "KAKAO_APP_KEY 값이 올바르지 않습니다. Kakao 네이티브 앱 키와 Info.plist 설정을 확인해주세요.")
-      }
-      return ("KAKAO_INVALID_REQUEST", "로그인 요청이 올바르지 않습니다. Kakao iOS 앱 설정과 전달 파라미터를 확인해주세요.")
-
-    case .InvalidClient:
-      return ("KAKAO_INVALID_CLIENT", "카카오 iOS 앱 설정이 올바르지 않습니다. KAKAO_APP_KEY, 번들 ID, iOS 플랫폼 등록값을 확인해주세요.")
-
-    case .AccessDenied:
-      return ("KAKAO_ACCESS_DENIED", "사용자가 카카오 로그인을 취소했거나 접근 권한을 거부했습니다.")
-
-    case .InvalidScope:
-      return ("KAKAO_INVALID_SCOPE", "유효하지 않은 동의 항목(scope)입니다. 요청한 동의 항목과 Kakao 콘솔 설정을 확인해주세요.")
-
-    case .Misconfigured:
-      return ("KAKAO_MISCONFIGURED", "카카오 iOS 설정이 올바르지 않습니다. 번들 ID, URL scheme, KAKAO_APP_KEY, Kakao 콘솔 설정을 확인해주세요.")
-
-    case .Unauthorized:
-      return ("KAKAO_UNAUTHORIZED", "카카오 로그인 권한이 없습니다. 앱 권한과 플랫폼 설정을 확인해주세요.")
-
-    case .InvalidGrant:
-      return ("KAKAO_INVALID_GRANT", "인가 정보가 유효하지 않습니다. 다시 로그인해주세요.")
-
-    case .ServerError:
-      return ("KAKAO_SERVER_ERROR", "카카오 서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.")
-
+    case .Cancelled:
+      return make(Code.cancelled, Message.cancelled, sdkMessage)
+    case .TokenNotFound:
+      return make(Code.tokenNotFound, Message.tokenNotFound, sdkMessage)
+    case .NotSupported:
+      return make(Code.notSupported, Message.notSupported, sdkMessage)
+    case .BadParameter:
+      return make(Code.badParameter, Message.badParameter, sdkMessage)
+    case .IllegalState:
+      return make(Code.illegalState, Message.illegalState, sdkMessage)
+    case .CastingFailed:
+      return make(Code.clientError, Message.clientError, sdkMessage)
     default:
-      return ("KAKAO_AUTH_ERROR", description ?? authErrorInfo?.error.rawValue ?? fallback)
+      return make(Code.clientError, Message.clientError, sdkMessage)
     }
   }
 
-  // SDK 에러 해석
-  static func parse(_ error: Error) -> (code: String, message: String) {
-    guard let sdkError = error as? SdkError else {
-      return ("KAKAO_ERROR", error.localizedDescription)
+  // API 에러 변환
+  private static func resolveApiError(_ reason: ApiFailureReason, _ sdkMessage: String?) -> ParsedError {
+    let lowercased = sdkMessage?.lowercased() ?? ""
+
+    if lowercased.contains("token") {
+      return make(Code.tokenExpired, Message.tokenExpired, sdkMessage)
     }
 
-    switch sdkError {
-    // 클라이언트 에러
-    case .ClientFailed(let reason, let errorMessage):
-      switch reason {
-      case .Cancelled:
-        return ("KAKAO_CANCELLED", "사용자가 로그인을 취소했습니다.")
-      case .NotSupported:
-        return ("KAKAO_NOT_SUPPORTED", "지원하지 않는 기능입니다.")
-      case .BadParameter:
-        return ("KAKAO_BAD_PARAMETER", "잘못된 파라미터입니다. \(errorMessage ?? "")")
-      case .TokenNotFound:
-        return ("KAKAO_TOKEN_NOT_FOUND", "로그인이 필요합니다.")
-      case .IllegalState:
-        return ("KAKAO_ILLEGAL_STATE", "잘못된 상태입니다. \(errorMessage ?? "")")
-      default:
-        return ("KAKAO_CLIENT_ERROR", errorMessage ?? error.localizedDescription)
-      }
+    if lowercased.contains("permission") || lowercased.contains("scope") || lowercased.contains("forbidden") {
+      return make(Code.forbidden, Message.forbidden, sdkMessage)
+    }
 
-    // API 에러
-    case .ApiFailed(let reason, let errorInfo):
-      switch reason {
-      case .InvalidAccessToken:
-        return ("KAKAO_UNAUTHORIZED", "인증이 만료되었습니다. 다시 로그인해주세요.")
-      case .Permission, .InsufficientScope:
-        return ("KAKAO_FORBIDDEN", "권한이 없습니다. 동의 항목을 확인해주세요.")
-      case .ApiLimitExceed:
-        return ("KAKAO_RATE_LIMIT", "요청이 너무 많습니다. 잠시 후 다시 시도해주세요.")
-      default:
-        return ("KAKAO_API_ERROR", errorInfo?.msg ?? error.localizedDescription)
-      }
+    if lowercased.contains("too many") || lowercased.contains("rate") || lowercased.contains("limit") {
+      return make(Code.rateLimit, Message.rateLimit, sdkMessage)
+    }
 
-    // 인증 에러
-    case .AuthFailed(let reason, let authErrorInfo):
-      return resolveAuthMessage(reason, authErrorInfo, error.localizedDescription)
+    if lowercased.contains("server") || lowercased.contains("internal") {
+      return make(Code.serverError, Message.serverError, sdkMessage)
+    }
 
+    return make(Code.apiError, Message.apiError, sdkMessage)
+  }
+
+  // 인증 에러 변환
+  private static func resolveAuthError(_ reason: AuthFailureReason, _ sdkMessage: String?) -> ParsedError {
+    switch reason {
+    case .InvalidClient:
+      return resolveAuthConfigurationError(sdkMessage)
+    case .InvalidGrant:
+      return make(Code.invalidGrant, Message.invalidGrant, sdkMessage)
+    case .InvalidRequest:
+      return resolveInvalidRequest(sdkMessage)
+    case .InvalidScope:
+      return make(Code.invalidScope, Message.invalidScope, sdkMessage)
+    case .Misconfigured:
+      return make(Code.misconfigured, Message.misconfigured, sdkMessage)
+    case .Unauthorized:
+      return make(Code.loginRequired, Message.loginRequired, sdkMessage)
+    case .AccessDenied:
+      return make(Code.accessDenied, Message.accessDenied, sdkMessage)
+    case .ServerError:
+      return make(Code.serverError, Message.serverError, sdkMessage)
     default:
-      return ("KAKAO_ERROR", error.localizedDescription)
+      return make(Code.authError, Message.authError, sdkMessage)
     }
+  }
+
+  // 인증 설정 에러 변환
+  private static func resolveAuthConfigurationError(_ sdkMessage: String?) -> ParsedError {
+    let lowercased = sdkMessage?.lowercased() ?? ""
+
+    if lowercased.contains("app key") || lowercased.contains("client_id") || lowercased.contains("invalid_client") {
+      return make(Code.invalidAppKey, Message.invalidAppKey, sdkMessage)
+    }
+
+    if lowercased.contains("bundle") {
+      return make(Code.invalidBundleId, Message.invalidBundleId, sdkMessage)
+    }
+
+    if lowercased.contains("scheme") || lowercased.contains("redirect") {
+      return make(Code.invalidUrlScheme, Message.invalidUrlScheme, sdkMessage)
+    }
+
+    return make(Code.invalidClient, Message.invalidClient, sdkMessage)
+  }
+
+  // 잘못된 요청 에러 변환
+  private static func resolveInvalidRequest(_ sdkMessage: String?) -> ParsedError {
+    let lowercased = sdkMessage?.lowercased() ?? ""
+
+    if lowercased.contains("scheme") || lowercased.contains("redirect_uri") {
+      return make(Code.invalidUrlScheme, Message.invalidUrlScheme, sdkMessage)
+    }
+
+    return make(Code.invalidRequest, Message.invalidRequest, sdkMessage)
+  }
+
+  // SDK 원문 메시지 추출
+  private static func resolveSdkMessage(_ error: Error) -> String? {
+    let message = error.localizedDescription.trimmingCharacters(in: .whitespacesAndNewlines)
+    return message.isEmpty ? nil : message
+  }
+
+  // 에러 생성
+  private static func make(_ code: String, _ message: String, _ sdkMessage: String? = nil) -> ParsedError {
+    return (code: code, message: message, sdkMessage: sdkMessage)
   }
 }
